@@ -1,6 +1,8 @@
 [
     {
         "nombre": "Pizza Margarita",
+        "categoria":"tradicional",
+        "precio":12000,
         "ingredientes": [
             {
                 "nombre": "Mozzarella",
@@ -21,6 +23,8 @@
     },
     {
         "nombre": "Pizza BBQ Pollo",
+        "categoria":"especial",
+        "precio":15000,
         "ingredientes": [
             {
                 "nombre": "Mozzarella",
@@ -46,6 +50,8 @@
     },
     {
         "nombre": "Pizza Hawaiana",
+        "categoria":"especial",
+        "precio":16000,
         "ingredientes": [
             {
                 "nombre": "Mozzarella",
@@ -71,6 +77,8 @@
     },
     {
         "nombre": "Pizza Vegetariana",
+        "categoria":"vegana",
+        "precio":20000,
         "ingredientes": [
             {
                 "nombre": "Mozzarella",
@@ -101,6 +109,8 @@
     },
     {
         "nombre": "Pizza Anchoas",
+        "categoria":"tradicional",
+        "precio":13000,
         "ingredientes": [
             {
                 "nombre": "Mozzarella",
