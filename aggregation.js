@@ -1,6 +1,6 @@
 import { MongoClient } from "mongodb";
 
-const uri = "mongodb://localhost:27017/";
+const uri = "mongodb+srv://camila:08072007@cluster0.upz3fbc.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0";
 const dbName = "pizzas";
 
 const cliente = new MongoClient(uri);
@@ -12,43 +12,33 @@ export async function ingredientesMasUsados(db) {
     fechaInicio.setMonth(fechaInicio.getMonth() - 1);
 
     const resultados = await db.collection("pedidos").aggregate([
-        { $match: { fecha: { $gte: fechaInicio } } },
+        { $match: { fecha: { $gte: new Date("2025-08-19") } } },
         { $unwind: "$pizzas" },
         {
             $lookup: {
                 from: "pizzas",
-                localField: "pizzas",
-                foreignField: "_id",
-                as: "infoPizza",
-            },
+                localField: "pizzas.nombre",
+                foreignField: "nombre",
+                as: "infoPizza"
+            }
         },
         { $unwind: "$infoPizza" },
         { $unwind: "$infoPizza.ingredientes" },
         {
             $group: {
-                _id: "$infoPizza.ingredientes",
-                totalUsos: { $sum: 1 },
-            },
+                _id: "$infoPizza.ingredientes.nombre",
+                totalUsos: { $sum: 1 }
+            }
+        },{
+            $project:{
+                _id:0,
+                nombre:"$_id",
+                totalUsos:1
+            }
         },
-        {
-            $lookup: {
-                from: "ingredientes",
-                localField: "_id",
-                foreignField: "_id",
-                as: "ingredienteInfo",
-            },
-        },
-        { $unwind: "$ingredienteInfo" },
-        {
-            $project: {
-                _id: 0,
-                nombre: "$ingredienteInfo.nombre",
-                totalUsos: 1,
-            },
-        },
-        { $sort: { totalUsos: -1 } },
+        { $sort: { totalUsos: -1 } }
     ]).toArray();
-    console.log("Los inngredientes más utilizados en el último mes son: ");
+    console.log("Los ingredientes más utilizados en el último mes son: ");
 
     resultados.forEach(r => {
         console.log(`- ${r.nombre}: ${r.totalUsos} usos`);
@@ -84,8 +74,8 @@ export async function categoriaMasVendida(db) {
         {
             $lookup: {
                 from: "pizzas",
-                localField: "pizzas",
-                foreignField: "_id",
+                localField: "pizzas.nombre",
+                foreignField: "nombre",
                 as: "infoPizza",
             },
         },
@@ -95,10 +85,14 @@ export async function categoriaMasVendida(db) {
                 _id: "$infoPizza.categoria",
                 totalVentas: { $sum: 1 },
             },
-        },
+        },{$project:{
+                _id:0,
+                categoria:"$_id",
+                totalVentas:1
+            }},
         { $sort: { totalVentas: -1 } },
         { $limit: 1 },
     ]).toArray();
     const top = resultados[0];
-    console.log(`\nCategoría más vendida históricamente: ${top._id} con ${top.totalVentas} ventas`);
+    console.log(`\nCategoría más vendida históricamente: ${top.categoria} con ${top.totalVentas} ventas`);
 } 
