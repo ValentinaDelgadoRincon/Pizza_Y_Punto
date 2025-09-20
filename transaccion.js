@@ -1,5 +1,5 @@
 import { MongoClient } from "mongodb";
-const uri = "mongodb://localhost:27017";
+const uri = "mongodb+srv://camila:08072007@cluster0.upz3fbc.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0";
 const dbName = "pizzas";
 
 const cliente = new MongoClient(uri);
@@ -13,7 +13,7 @@ async function realizarPedido(clienteId, pizzasId) {
         await session.withTransaction(async () => {
             const coleccionCliente = db.collection("clientes");
             const coleccionPizza = db.collection("pizzas");
-            const coleccionIngredientes=db.collection("ingredientes")
+            const coleccionIngredientes = db.collection("ingredientes")
             const coleccionPedidos = db.collection("pedidos");
             const coleccionRepartidores = db.collection("repartidores");
 
@@ -21,47 +21,57 @@ async function realizarPedido(clienteId, pizzasId) {
             const pizza = await coleccionPizza.findOne({ nombre: pizzasId }, { session });
 
             if (!cliente || !pizza) {
-                throw new error("Cliente o pizza no existe");
+                throw new Error("Cliente o pizza no existe");
+            }
+
+            for( const ing of pizza.ingredientes){
+            const ingrediente = await coleccionIngredientes.findOne({ nombre: ing.nombre }, { session });
+                        if (!ingrediente || ingrediente.stock <= 0) {
+                            throw new Error("Ingrediente no disponible");
+                        }
+
+                        await coleccionIngredientes.updateOne(
+                            { nombre: ing.nombre },
+                            { $inc: { stock: -1 } },
+                            { session }
+                        );
+
+                        await coleccionPizza.updateOne(
+                            {nombre:pizza.nombre,"ingredientes.nombre":ing.nombre},
+                            {$inc:{"ingredientes.$.stock":-1}},
+                            {session}
+                        )
+
             }
             
-            if (pizza.stock <= 0) {
-                throw new Error("Cantidad no disponible");
-            }
 
-            await coleccionPizza.updateOne(
-                { nombre: pizza.nombre },
-                { $inc: { stock: -1 } },
-                { session }
-            );
+            const total = pizza.precio;
 
-            const total =pizza.precio;
-
+            const repartidorAsignado = await coleccionRepartidores.findOne({ estado: "disponible" }, { session });
+            if (!repartidorAsignado) {
+                throw new Error("No hay repartidores disponibles")
+            };
             await coleccionPedidos.insertOne({
                 pizzas: [pizzasId],
                 cliente: clienteId,
-                total: total
-            },{session}
+                total: total,
+                repartidorAsignado:repartidorAsignado._id
+            }, { session }
             );
 
-            const repartidor = await coleccionRepartidores.updateOne(
-                { estado: "disponible" },
+            await coleccionRepartidores.updateOne(
+                { _id: repartidorAsignado._id },
                 { $set: { estado: "ocupado" } },
-                {session}
-            )
-            if (repartidor.estado !== "disponible") {
-                console.log("No hay repartidores disponibles")
-            };
-
-            await pedido.updateOne({
-                cliente:clienteId,
-                pizzas:[pizzasId],
-                total:pedido.total,
-                repartidorAsignado:repartidores.forEach(r=>{
-                    r.repartidor+=1
-                })
-            })
-        })
+                { session }
+            );
+        });
     } catch (error) {
-
+        console.log("Error ", error)
+    }
+    finally {
+        await session.endSession();
+        await cliente.close();
     }
 }
+
+realizarPedido("Santiago","Pizza Margarita")
