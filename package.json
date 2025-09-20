@@ -8,5 +8,9 @@
   "keywords": [],
   "author": "",
   "license": "ISC",
-  "description": ""
+  "type": "module",
+  "description": "",
+  "dependencies": {
+    "mongodb": "^6.20.0"
+  }
 }
